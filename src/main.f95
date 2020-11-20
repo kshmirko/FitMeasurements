@@ -45,7 +45,8 @@ program FitMeasurements
 	Fl = SQRT(1.0D0 - 0.50D0* Cr )
 	Fh = 0.950D0 ! L,H order should be fine as long as Cr > 0.2
 	
-	
+	call powerlaw(KN,1,1.0,-4.3,0.1,1.0,RRR,AR,AC,KNpar)
+
 	CALL Diff_Evol( nop, NP, LoParamVal, UpParamVal, T, Fl, Fh, Cr, 1, X, v, 100, ObjectiveFunction )
   CALL ObjectiveFunction(nop, X, v)
 	

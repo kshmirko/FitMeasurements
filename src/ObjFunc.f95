@@ -95,9 +95,11 @@ contains
 			!случай невязки в виде root mean square 
 			func_val = 0.0
 			
-			DO I=1, SearchParamsCount
-				func_val = func_val + (( Ym(I)-Yc(I) )/Ym(I))**2.0
-			END DO
+			! Переписали код короче
+			func_val = sum( ((Ym - Yc)/Ym)**2 )
+			!DO I=1, SearchParamsCount
+			!	func_val = func_val + (( Ym(I)-Yc(I) )/Ym(I))**2.0
+			!END DO
 			
 			func_val = SQRT(func_val/SearchParamsCount)
 			
@@ -105,12 +107,14 @@ contains
 			! случай максимального абсолютного отклонения
 			func_val=0.0
 			
-			DO I=1, SearchParamsCount
-				tmp = ABS(( Ym(I)-Yc(I) )/Ym(I))
-				if (func_val .gt. tmp) then
-					func_val = tmp
-				end if
-			END DO
+			! Перевисали код короче
+			func_val = MAXVAL( (Ym-Yc)/Ym )
+! 			DO I=1, SearchParamsCount
+! 				tmp = ABS(( Ym(I)-Yc(I) )/Ym(I))
+! 				if (func_val .gt. tmp) then
+! 					func_val = tmp
+! 				end if
+! 			END DO
 		
 		endif
 		
@@ -118,6 +122,28 @@ contains
 		func_val = func_val * 100
 	end subroutine ObjectiveFunction
 	
-	
+	subroutine powerlaw(KN,ID,A,GAMMA,RMIN,RMAX,RRR,AR,AC,KNpar)
+		implicit none
+		integer, intent(IN) :: KN, ID, KNpar
+		real, intent(IN)		:: A, GAMMA, RMIN, RMAX
+		real, intent(INOUT)	:: RRR(KNpar), AR(KNpar), AC
+		integer							:: KNN, I
+		REAL								:: DR, NORMAL
+		
+		KNN = KN
+		
+		DR = (LOG(RMAX)-LOG(RMIN))/REAL(KN-1)
+		NORMAL = 4.188*(RMAX**(GAMMA+1.0+3.0) - RMIN**(GAMMA+1.0+3.0))/(GAMMA+1.0+3.0)
+		DO I=1, KN
+			RRR(I)=EXP(LOG(RMIN)+(I-1)*DR)
+			AR(I) = A/NORMAL*RRR(I)**gamma
+		END DO
+		AR = 4.188*(RRR**3)*AR
+		AC = 0.0
+		DO I=2, KN
+			AC = AC + 0.5*(AR(I-1)+AR(I))*(RRR(I)-RRR(I-1))
+		END DO
+		print *, AC, NORMAL
+	end subroutine powerlaw
 	
 end module ObjFuncMod
