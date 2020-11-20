@@ -1,0 +1,239 @@
+2 3 0 1 0 0 1      ! key,keyEL,keySUB,keyLS,key_org,key_fx,key_RD1   ! general  
+0.355 1.56 0.002 0.05 15.0 0.34 1.064 ! WL, 1.56 RN, RK, rgmin, rgmax, wlmin, wlmax  
+1 3 1     ! key_SD, ID, NMD-number of SD mode
+0.04 0.4 0.12 0.4 0.3 0.9  !  CM(1),SM(1),RMM(1)(mkm),CM(2),SM(2),RMM(2)(mkm) Solar-Vil.   
+22                           ! KN
+ 5.00000E-2     3.636746667E-3
+ 6.56037E-2     1.27650341E-2
+ 8.60768E-2     2.825477906E-2
+ 0.112939       3.943919018E-2
+ 0.148184       3.472143412E-2
+ 0.194429       1.932093687E-2
+ 0.255105       7.050227374E-3
+ 0.334716       2.947342116E-3
+ 0.439172       5.879985634E-3
+ 0.576226       1.799305901E-2
+ 0.756052       4.640357196E-2
+ 0.991995       9.759383649E-2
+ 1.30157        0.167227194
+ 1.70776        0.233451143
+ 2.24070        0.265515089
+ 2.93996        0.246029273
+ 3.85745        0.185732767
+ 5.06126        0.114233799
+ 6.64074        5.724075064E-2
+ 8.71314        2.336790785E-2
+ 11.4323        7.772107143E-3
+ 15.0           2.106020227E-3
+./KERNELS_n22k16_181_base
+./KERNELS_fix
+./KERNELS_new
+25                  ! KR    from Oleg's paper (sum=1.)            
+0.3349  0.066185    
+0.3669  0.065025
+0.4019  0.063635
+0.4403  0.06205  
+0.4823  0.05872
+0.5283  0.05335
+0.5787  0.0477625
+0.6339  0.042953
+0.6944  0.0403205
+0.7607  0.
+0.8333  0.
+0.9129  0.
+1.      0.
+1.0954  0.
+1.2     0.
+1.3145  0.
+1.44    0.0403205
+1.5774  0.042953
+1.728   0.0477625
+1.8929  0.05335
+2.0736  0.05872
+2.2715  0.06205
+2.48832 0.063635
+2.7258  0.065025
+2.9860  0.066185
+1                         ! KM
+180.
+25                            ! NRATN
+Rkernel1_033
+Rkernel1_037
+Rkernel1_040
+Rkernel1_044
+Rkernel1_048
+Rkernel1_053
+Rkernel1_058
+Rkernel1_063
+Rkernel1_069
+Rkernel1_076
+Rkernel1_083
+Rkernel1_091
+Rkernel1_100
+Rkernel1_110
+Rkernel1_120
+Rkernel1_131
+Rkernel1_144
+Rkernel1_158
+Rkernel1_173
+Rkernel1_189
+Rkernel1_207
+Rkernel1_227
+Rkernel1_249
+Rkernel1_273
+Rkernel1_299
+
+
+*****************
+Solar-Vil.
+rv        0.12	       2.32
+sigm      0.4         0.6
+rn        7.43E-02    7.88E-01
+Cn        1.          1.
+Cv        3.52E-03    1.03E+01
+*****************
+
+! **************************************************************** c
+! **   02/28/03                                                 ** c
+! **   Program calculates optical characteristics for given     ** c
+! **   size distribution, refractive index, axis ratio          ** c
+! **   distribution and wavelength                              ** c
+! **************************************************************** c
+! **                                                            ** c
+! ** INPUT:                                                     ** c
+! **                                                            ** c 
+! **   key  = 1 - create fixed kernels (for fixed axis          ** c 
+! **              ratio distr.) and save them                   ** c
+! **              into 'Rke...fix...' files and calculate       ** c
+! **              opt.characteristics                           ** c
+! **          2 - read fixed kernels from 'Rke...fix...'  files ** c
+! **          3 - create fixed kernels but don't save them      ** c
+! **          4 - don't create fixed kernels, calculate         ** c
+! **              opt.characteristics from original kernels     ** c
+! **   key_RD =1 - volume mixture of spheroids                  ** c
+! **           2 - surface area  mixture of spheroids           ** c
+! **                                                            ** c
+! **   keyEL=  1 - calculate F11                                ** c
+! **           2 - F11,F12                                      ** c
+! **           3 - F11,F12,F22                                  ** c
+! **           4 - F11,F12,F22,F33                              ** c
+! **           5 - F11,F12,F22,F33,F34                          ** c
+! **           6 - F11,F12,F22,F33,F34,F44                      ** c
+! **   keySUB= OPTCHAR will be used as a subroutine for         ** c
+! **           inversion code                                   ** c
+! **   keyLS = 1 Linear interpolation of F11...F44 for size     ** c
+! **             parameter                                      ** c
+! **   keyLS = 2 Spline interpolation                           ** c          
+! **                                                            ** c
+! **   key_org=0 - read original kernels simultaniously make    ** c 
+! **               angle interpolation and calculate opt.char.  ** c
+! **           1 -  -"-, save new kernels in                    ** c
+! **                /distname_N/ directory, STOP                ** c
+! **   key_fx works when key=1                                  ** c
+! **        =0 -  create fixed kernels (for fixed axis          ** c 
+! **              ratio distr.) and save them                   ** c
+! **              into 'Rke...fix...' files and calculate       ** c
+! **              opt.characteristics                           ** c
+! **         1 - save fixed kernels with original kernel format ** c
+! **             in order to be used as input kernels;          ** c
+! **             'Rke...fix' kernels have to be renamed and moved* c
+! **             into directory 'dir_name'(see 'matrix_fixget.f')* c
+! **             The files can not be used if key=2.            ** c
+! **   key_RD1 =1 - grid axis ratios R are flexible             ** c
+! **            2 - grid axis ratios are exact as in            ** c
+! **                precalculated kerlels                       ** c
+! **                                                            ** c
+! **   WL   - wavelength                                        ** c
+! **   RN   - real part of the refractive index                 ** c
+! **   RK   - imaginary part of the refractive index            ** c
+! **   rgmin,rgmax &                                            ** c 
+! **   wlmin,wlmax - min,max radii and wlmin,wlmax wavelengths  ** c
+! **                 that are used to recalculate grid radii for** c
+! **                 fixed kernels. New input file              ** c
+! **                'grid1.dat.new' will be created if key=1    ** c
+! **                 or key_org=1. Use key_grid1 to choose      ** c
+! **                 'grid1.dat' or 'grid1.dat.new' will be read** c
+! **                 for further calculations                   ** c  
+! **   key_SD=0 - read Size Distribution table dV/dlnR          ** c
+! **         =1 - calculate Size Distribution for grid radii    ** c
+! **              using Log Normal function                     ** c
+! **   ID    - dimension of d(...)/dlnR or d(...)/dR            ** c
+! **       = 0 - number                                         ** c
+! **       = 1 - radius                                         ** c
+! **       = 2 - cross section area                             ** c
+! **       = 3 - volume                                         ** c
+! **   NMD   - number of modes (up to 2)                        ** c
+! **   KN   - number of grid radii                              ** c
+! **   grid(KN) - grid radii                                    ** c
+! **   SD(KN)   - size distribution for grid radii              ** c
+! **   (CM(i),SM(i),RMM(i),i=1,NMD) - size distribution         ** c
+! **   function (LogNormal) parameters:                         ** c
+! **                         CM - concentration                 ** c
+! **                         SM - standard deviation            ** c
+! **                         RMM - median radius                ** c
+! **   distname_O - original kernel directory name              ** c
+! **   distname_F - .fix kernel directory name                  ** c
+! **   distname_N - new original kernel directory               ** c
+! **                                      name (key_org=1)      ** c
+! **   KR  - number of axis ratios                              ** c
+! **   R(KR)  - grid axis ratios                                ** c
+! **   RD(KR) - axis ratio distribution for grid axis ratios    ** c
+! **   KM   - number of scattering angles                       ** c
+! **   ANGLE(KM) - scattering angles                            ** c
+! **                                                            ** c
+! ** OUTPUT:                                                    ** c
+! **                                                            ** c
+! **   ext     - extinction                                     ** c
+! **   albedo  - albedo                                         ** c
+! **   f... - scattering matrix elements                        ** c
+! **************************************************************** c
+
+
+grid size parameters
+
+41    ! KN 
+0.012
+0.015743407
+0.020654571
+0.027097776
+0.035550943
+0.046641079
+0.06119079
+0.080279292
+0.105322461
+0.138177862
+0.181282524
+0.237833709
+0.312026067
+0.409362774
+0.53706372
+0.704601049
+0.924401741
+1.212769381
+1.591093469
+2.087435968
+2.738612788
+3.592924581
+4.713739416
+6.184193067
+8.113355558
+10.64432137
+13.96482338
+18.32115786
+24.03645331
+31.53463839
+41.3718865
+54.27786966
+71.2098815
+93.42384392
+122.5674644
+160.8024535
+210.964869
+276.775478
+363.1157434
+476.3899029
+625.
+
+
+
+

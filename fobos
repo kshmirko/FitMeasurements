@@ -1,0 +1,19 @@
+[default]
+help      = This is the help message...
+colors    = True
+quiet     = False
+jobs      = 1
+compiler  = gnu
+mpi       = False
+cflags    = -c -Ofast
+lflags    = -Ofast
+libs      = 
+include   = 
+inc       = .cmn .icp
+mod_dir   = ./mod/
+obj_dir   = ./obj/
+build_dir = ./
+src       = ./src/
+log       = True
+target    = main.f95
+output    = FitMeasurements
