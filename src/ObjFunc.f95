@@ -3,24 +3,35 @@ module ObjFuncMod
 	! его переменные, особенно в случае масивов
 	implicit none
 	public
-	integer, parameter	:: WavelengthCount   = 3
-	integer, parameter	:: SearchParamsCount = 5
-	integer, parameter	:: InpParamsCount    = 5
+	integer, parameter	:: MaxInputVectorsCount = 100
+	integer, parameter	:: MaxWavelengthsCount = 3
+	
+	
+	integer, parameter	:: MaxSearchParamsCount = 10
+	integer, parameter	:: MaxInpParamsCount    = 10
+	
 	integer, parameter	:: DiscrKindRMS			 = 0
 	integer, parameter	:: DiscrKindMAXABS   = 1
+	integer, parameter	:: FunctLogNormal		 = 0
+	integer, parameter	:: FunctPowerLaw		 = 1
+	integer, parameter	:: LnParamsCount		 = 5
+	integer, parameter	:: PowParamsCount		 = 4
+	  
 	
-
-	real	:: Ym(SearchParamsCount)=(/0.0,0.0,0.0,0.0,0.0/),	 Yc(SearchParamsCount)
-	real	:: LoParamVal(1:SearchParamsCount), UpParamVal(1:SearchParamsCount)
-	real  :: Bsc(1:WavelengthCount), Ext(1:WavelengthCount), Wvl(1:WavelengthCount), &
-					&Absb(1:WavelengthCount), Ldr(1:WavelengthCount), X(1:SearchParamsCount),&
-					&Blr(1:WavelengthCount)
+	real, dimension(MaxInpParamsCount, MaxInputVectorsCount)	:: datum
+	real, dimension(MaxInpParamsCount)		:: Ym,	 Yc
+	real, dimension(MaxSearchParamsCount)	:: LoParamVal, UpParamVal, X
+	real, dimension(MaxWavelengthsCount)		:: Bsc, Ext, Wvl, Absb, Ldr, Blr
 	real	::	Rmin, Rmax
-	Integer:: discrKind
+	Integer:: discrKind, func_type
+	integer	:: AlphaInpParamsCount, DepolInpParamsCount, InputVectorsCount
+	integer :: WavelengthCount 
+	integer	:: InpParamsCount, SearchParamsCount
 contains
 	
 	! Специальная функция инициализации переменных модуля
 	subroutine InitObjFuncVariables()
+		datum = 0.0
 		Ym = 0.0
 		Yc = 0.0
 		LoParamVal = 0.0
@@ -34,29 +45,44 @@ contains
 		X= 0.0
 		Rmin = 0.05
 		Rmax = 15.0
-		discrKind = 0
+		discrKind = DiscrKindRMS
+		func_type = FunctLogNormal
+		WavelengthCount = 3
+		InpParamsCount = 5
+		SearchParamsCount =5
 	end subroutine InitObjFuncVariables
 	
 	subroutine ObjectiveFunction(NP, X, func_val)
 		use mo_DLS
+		implicit none
 		integer, intent(IN)	::	NP
-		real, intent(IN) 		:: X(NP)
-		real, intent(inout) :: func_val
+		real, intent(IN) 		::	X(NP)
+		real, intent(inout) ::	func_val
 		real tmp
 		logical b_print
 		
 		integer I
 		
-		DO I=1, SearchParamsCount
+		! Chreck bounds
+		DO I=1, NP
 			if ( ( X(I).lt.LoParamVal(I) ) .or.  ( X(I).gt.UpParamVal(I) ) ) then
 				func_val = 99999.0
 				return
 			end if
 		END DO
-		RN = X(4)
-		RK = X(5)
 		
-		call SIZEDIS2(-KN,1,X(1),X(2),X(3),RMIN,RMAX,RRR,AR,AC) 
+		! Last two items in X are always RN and RK
+		RN = X(NP-1)
+		RK = X(NP)
+		
+		if ( (func_type .eq. FunctLogNormal) .and. (NP .eq. LnParamsCount) ) then
+			call SIZEDIS2(-KN,1,X(1),X(2),X(3),RMIN,RMAX,RRR,AR,AC) 
+		else if ( (func_type .eq. FunctPowerLaw) .and. (NP .eq. PowParamsCount) ) then
+			call powerlaw(KN,X(1),X(2),RMIN,RMAX,RRR,AR,AC, KNpar)
+		else
+			print *, "WRONG PARAMETERS COUNT OF FITTING FUNCTION TYPE"
+			STOP
+		endif		
 		
 		SD(1:KN) = AR(1:KN)
 		
@@ -85,7 +111,7 @@ contains
 			
 		END DO
 		
-		DO I=1, SearchParamsCount-WavelengthCount
+		DO I=1, AlphaInpParamsCount
 			Yc(I+WavelengthCount) = Ext(I)
 		END DO
 		
@@ -96,10 +122,10 @@ contains
 			func_val = 0.0
 			
 			! Переписали код короче
-			func_val = sum( ((Ym - Yc)/Ym)**2 )
-			!DO I=1, SearchParamsCount
-			!	func_val = func_val + (( Ym(I)-Yc(I) )/Ym(I))**2.0
-			!END DO
+			!func_val = sum( ((Ym - Yc)/Ym)**2 )
+			DO I=1, SearchParamsCount
+				func_val = func_val + (( Ym(I)-Yc(I) )/Ym(I))**2.0
+			END DO
 			
 			func_val = SQRT(func_val/SearchParamsCount)
 			
@@ -108,13 +134,13 @@ contains
 			func_val=0.0
 			
 			! Перевисали код короче
-			func_val = MAXVAL( (Ym-Yc)/Ym )
-! 			DO I=1, SearchParamsCount
-! 				tmp = ABS(( Ym(I)-Yc(I) )/Ym(I))
-! 				if (func_val .gt. tmp) then
-! 					func_val = tmp
-! 				end if
-! 			END DO
+			!func_val = MAXVAL( (Ym-Yc)/Ym )
+ 			DO I=1, SearchParamsCount
+ 				tmp = ABS(( Ym(I)-Yc(I) )/Ym(I))
+ 				if (func_val .gt. tmp) then
+ 					func_val = tmp
+ 				end if
+ 			END DO
 		
 		endif
 		
@@ -122,9 +148,9 @@ contains
 		func_val = func_val * 100
 	end subroutine ObjectiveFunction
 	
-	subroutine powerlaw(KN,ID,A,GAMMA,RMIN,RMAX,RRR,AR,AC,KNpar)
+	subroutine powerlaw(KN,A,GAMMA,RMIN,RMAX,RRR,AR,AC,KNPar)
 		implicit none
-		integer, intent(IN) :: KN, ID, KNpar
+		integer, intent(IN) :: KN, KNpar
 		real, intent(IN)		:: A, GAMMA, RMIN, RMAX
 		real, intent(INOUT)	:: RRR(KNpar), AR(KNpar), AC
 		integer							:: KNN, I
@@ -143,7 +169,6 @@ contains
 		DO I=2, KN
 			AC = AC + 0.5*(AR(I-1)+AR(I))*(RRR(I)-RRR(I-1))
 		END DO
-		print *, AC, NORMAL
 	end subroutine powerlaw
 	
 end module ObjFuncMod
