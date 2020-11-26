@@ -33,14 +33,13 @@ program FitMeasurements
 ! 	end do
 			
 	fname = "./input.dat"
-	data_fname = "./input.lst"
 	iniFname = "./inifile.ini"
 	
 	call InitObjFuncVariables()
 	
 	
 	! Call init variables from file
-	call ReadIniFile(iniFname)
+	call ReadIniFile(iniFname, fname)
 	call DLS_read_input(fname)
 	
 	! NDP = 0, then berfore calculations we load tables from file
@@ -63,9 +62,9 @@ program FitMeasurements
 	! Number of population vectors:
 	NP = 10 * SearchParamsCount + 10
 	! Number of generations
-	T = 1000
+	T = NGEN
 	! Crossover variable: Cr \in [0,1]
-	Cr = 0.85D0 ! manually set
+	Cr = 0.5D0 ! manually set
 
 	! Scale factor determined by dither:
 	Fl = SQRT(1.0D0 - 0.50D0* Cr )
@@ -77,12 +76,69 @@ program FitMeasurements
 		Ym(1:InpParamsCount) = datum(1:InpParamsCount, II)
 		
 		
-		
 		CALL Diff_Evol( SearchParamsCount, NP, LoParamVal, UpParamVal, T, Fl, Fh, Cr, 1, X, v, 100, ObjectiveFunction )
   	CALL ObjectiveFunction(SearchParamsCount, X, v)
 		
+		Call PrintReport(v, X)
+	END DO
+		
+	
+	
+	
+	
+	! Deallocate internal arrays last parameter = 2
+	call alloc_DLS_array(key,keyEL,2)
+	
+contains
+	subroutine ReadIniFile(iniFname, fname)
+		use ObjFuncMod
+		implicit none
+		character(len=255), intent(in) 		:: iniFname
+		character(len=255), intent(inout) :: fname
+		INTEGER I, J
+		
+		open(101, FILE=trim(iniFname), status='old')
+		READ(101, *) fname
+		READ(101, *) WavelengthCount
+		READ(101, *) AlphaInpParamsCount
+		READ(101, *) DepolInpParamsCount
+		READ(101, *) (Wvl(I),I=1,WavelengthCount)
+		READ(101, *) discrKind
+		READ(101, *) func_type
+		READ(101, *) KN
+		READ(101, *) Rmin, Rmax
+		READ(101, *) NGEN
+		
+		if(func_type .eq. FunctLogNormal) then
+			SearchParamsCount = LnParamsCount
+		else if(func_type .eq. FunctPowerLaw) then
+			SearchParamsCount = PowParamsCount
+		end if
+		
+		InpParamsCount = WavelengthCount+AlphaInpParamsCount+DepolInpParamsCount
+		READ(101, *) (LoParamVal(I),I=1,SearchParamsCount)
+		READ(101, *) (UpParamVal(I),I=1,SearchParamsCount)
+		READ(101, *) InputVectorsCount
+		DO I=1, InputVectorsCount
+			READ(101, *) (datum(J, I),J=1,InpParamsCount)
+		END DO
+		close(101)
+		
+		
+	end subroutine ReadIniFile
+	
+	subroutine PrintReport(gof, fit)
+		use mo_DLS
+		use ObjFuncMod
+		implicit none
+		
+		
+		real, intent(in) :: gof, fit(:)
+		
 		! REPORT RESULTS
+		PRINT *
 		PRINT '("REPORT:")'
+		PRINT '("=======")'
 		PRINT *
 		PRINT *, "The program found a solution to the inverse scattering problem in the spheroid"
 		PRINT *, "approximation, using a log-normal function as the distribution. The search for"
@@ -97,11 +153,11 @@ program FitMeasurements
 	
 	
 	
-		PRINT '("GOODNESS OF FIT:", F13.2, "%",/)', v
+		PRINT '("GOODNESS OF FIT:", F13.2, "%",/)', gof
 	
 		PRINT '("                 ", 5A13)', "CM", "SM", "RMM", "RN", "RK"
 		PRINT '("                 ", 5A13)', "==========", "==========", "==========", "==========", "=========="
-		PRINT '("Final solution = ", 5F13.6)', X
+		PRINT '("Final solution = ", 5F13.6)', fit(1:SearchParamsCount)
 		PRINT *, "                   ----------   ----------   ----------   ----------   ----------"
 		PRINT *
 	
@@ -125,49 +181,8 @@ program FitMeasurements
 		PRINT '(A13,A13)', "R, mkm", "SD"
 		
 		DO I=1, KN
-			PRINT '(3E13.3)', RRR(I), AR(I), SD(I)
+			PRINT '(2E13.3)', RRR(I), AR(I)
 		END DO
-	END DO
 		
-	
-	
-	
-	
-	! Deallocate internal arrays last parameter = 2
-	call alloc_DLS_array(key,keyEL,2)
-	
-contains
-	subroutine ReadIniFile(iniFname)
-		use ObjFuncMod
-		implicit none
-		character(len=255), intent(in) :: iniFname
-		INTEGER I, J
-		
-		open(101, FILE=trim(iniFname), status='old')
-		READ(101, *) WavelengthCount
-		READ(101, *) AlphaInpParamsCount
-		READ(101, *) DepolInpParamsCount
-		READ(101, *) (Wvl(I),I=1,WavelengthCount)
-		READ(101, *) discrKind
-		READ(101, *) func_type
-		READ(101, *) KN
-		READ(101, *) Rmin, Rmax
-		
-		if(func_type .eq. FunctLogNormal) then
-			SearchParamsCount = LnParamsCount
-		else if(func_type .eq. FunctPowerLaw) then
-			SearchParamsCount = PowParamsCount
-		end if
-		
-		InpParamsCount = WavelengthCount+AlphaInpParamsCount+DepolInpParamsCount
-		READ(101, *) (LoParamVal(I),I=1,SearchParamsCount)
-		READ(101, *) (UpParamVal(I),I=1,SearchParamsCount)
-		READ(101, *) InputVectorsCount
-		DO I=1, InputVectorsCount
-			READ(101, *) (datum(J, I),J=1,InpParamsCount)
-		END DO
-		close(101)
-		
-		
-	end subroutine ReadIniFile
+	end subroutine PrintReport
 end program FitMeasurements

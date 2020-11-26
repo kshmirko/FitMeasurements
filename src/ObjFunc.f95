@@ -26,11 +26,12 @@ module ObjFuncMod
 	Integer:: discrKind, func_type
 	integer	:: AlphaInpParamsCount, DepolInpParamsCount, InputVectorsCount
 	integer :: WavelengthCount 
-	integer	:: InpParamsCount, SearchParamsCount
+	integer	:: InpParamsCount, SearchParamsCount, NGEN
 contains
 	
 	! Специальная функция инициализации переменных модуля
 	subroutine InitObjFuncVariables()
+		NGEN = 1000
 		datum = 0.0
 		Ym = 0.0
 		Yc = 0.0
@@ -86,12 +87,13 @@ contains
 		
 		SD(1:KN) = AR(1:KN)
 		
+		
 		DO I=1, WavelengthCount
-			
 			IF (NDP==0) then
 				print *, "LOADING DATABASE OF SPHEROIDS..."
 				b_print = .true.
 			endif
+			
 			WL = WVL(I)
 			
 			CALL OPTCHAR(NDP)

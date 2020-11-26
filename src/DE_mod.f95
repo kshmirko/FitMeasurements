@@ -33,7 +33,7 @@ SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I
 	REAL(sp),                    INTENT(OUT)    :: F_best
 
 	! Local variables:
-	INTEGER                                     :: nn, kk, kc, tt
+	INTEGER                                     :: nn, kk, kc, tt, ik
 	INTEGER                                     :: IND
 	INTEGER,  DIMENSION(1)                      :: f1_pos
 	INTEGER,  DIMENSION(3)                      :: spouse
@@ -92,6 +92,8 @@ SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I
 
 	F_best  = MINVAL( F_theta(:) )
 
+	WRITE(*,'("SOLUTION SET:")')
+	WRITE(*,'("=============",/)')
 	gen_do: DO tt = 1, T !- - generation loop - - - - - - - - - - - - - - - - - - - -
 		CALL RANDOM_NUMBER( Z1 )
 		Fdither = Z1 * (F_hi - F_lo) + F_lo
@@ -153,14 +155,19 @@ SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I
 
 		! Live reporting
 		if (mod(tt, I_prn) == 0) then
-			PRINT*, tt, f1, f1_pos, f1_turn
+			!PRINT*, tt, f1, f1_pos, f1_turn
 		endif
 
 		IF ( f1 < F_best ) THEN
 			BH_best(:)  = THETA(:, f1_pos(1))
 			F_best  = f1
+			! Print best function parameters at each generation
+			WRITE(*,'(I5, E13.3, $)') tt, F_best
+			WRITE(*,*) (BH_best(ik),ik=1,nop) 
 		END IF
-
+		
+		
+		
 		! = = = = GRID LOCK EXIT = = = =
 		IF( tt> 250 ) THEN
 			IF (f1_turn <= 0.0000000000000001D0 .AND. PD==0) THEN
@@ -168,7 +175,7 @@ SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I
 			END IF
 		END IF
 
-		IF (PD ==1) THEN != = = = PERTURBATIONS = = = =
+		IF (PD ==1) THEN ! = = = PERTURBATIONS = = = =
 			kk = NINT( REAL(tt,dp) / 10.0D0) * 10
 			IF ( tt == kk)  THEN
 				IF ( f1_turn < 0.010D0 ) THEN

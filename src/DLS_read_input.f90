@@ -142,25 +142,25 @@ subroutine DLS_read_input(fullpath_input)
 !
 ! ** CALCULATE SD if key_SD=1
 !      
-  if(key_SD.eq.1) then
-  	OPEN (7,FILE='LNPAR.dat',status='unknown')
-    OPEN (9,FILE='SizeDis.dat',status='unknown')
-    call SIZEDISDN ( -KN,1,ID, NMD,                 &
-										&CM (1:NMD),                    &
-	                  &SM (1:NMD),                    &
-					   			 	&RMM(1:NMD),                    &
-					  				&xgrid(1),xgrid(KN),      &
-					   			  &RRR(:),AR(:),AC, KNpar,1 )
-    if(keySUB.eq.0) then
-    	!write(*,*) 'CM=',CM(1:NMD),' AC=',AC	  
-      do i=1,KN
-	  	!	write(*,13) i,RRR(i),AR(i) 
-      enddo ! i
-	  endif
-	  SD(1:KN)=AR(1:KN)
-    CLOSE(9)
-	  CLOSE(7)	
-	endif ! key_SD
+!   if(key_SD.eq.1) then
+!   	OPEN (7,FILE='LNPAR.dat',status='unknown')
+!     OPEN (9,FILE='SizeDis.dat',status='unknown')
+!     call SIZEDISDN ( -KN,1,ID, NMD,                 &
+! 										&CM (1:NMD),                    &
+! 	                  &SM (1:NMD),                    &
+! 					   			 	&RMM(1:NMD),                    &
+! 					  				&xgrid(1),xgrid(KN),      &
+! 					   			  &RRR(:),AR(:),AC, KNpar,1 )
+!     if(keySUB.eq.0) then
+!     	!write(*,*) 'CM=',CM(1:NMD),' AC=',AC
+!       do i=1,KN
+! 	  	!	write(*,13) i,RRR(i),AR(i)
+!       enddo ! i
+! 	  endif
+! 	  SD(1:KN)=AR(1:KN)
+!     CLOSE(9)
+! 	  CLOSE(7)
+! 	endif ! key_SD
 
 
 13 FORMAT(i4,4E12.4)
