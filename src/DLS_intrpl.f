@@ -102,7 +102,7 @@
       real   , intent(out)    :: dlnr1
 	  
       real  WAVEL, dlnr 
-      real*4  RATIO(KR1par)
+      real  RATIO(KR1par)
       dimension grid1(KN1par)
      &         ,ANGLE1(KMpar)
       real USEA,US11,US12,US22,US33,US34,US44
@@ -120,11 +120,11 @@
 !c      real LINEAR
 !cl     &, LINEAR_LN
 !c ----- Timer ------
-      real*4 tarray(2),T_INT,T_INT0
+      real tarray(2),T_INT,T_INT0
       !real*4, external :: etime,dtime
       real time_begin, time_end, T_CPU
       real time_begin1, time_end1, T_CPU1
-      real*4 T_INT1,T_INT01
+      real T_INT1,T_INT01
 	save WAVEL,KN1,grid1,KRE,KIM,ARE,AIM, dlnr
      &  ,RATIO
 	
@@ -270,10 +270,10 @@
 
       INTEGER           :: key_spln
 !cl      REAL              :: cinv
-      real*8, dimension(KN1par)    :: XXS1,YYS1
-      real*8                       :: XARG,YFIT
-      real*8, dimension(KN1par+4)  :: KS1,CS1
-      real(4) :: ang_f33, ang_f44
+      double precision, dimension(KN1par)    :: XXS1,YYS1
+      double precision                       :: XARG,YFIT
+      double precision, dimension(KN1par+4)  :: KS1,CS1
+      real :: ang_f33, ang_f44
 
       ang_f33 = 20.0
       ang_f44 = 20.0
@@ -858,7 +858,7 @@
 !	  use mod_os
 	  use mo_intrpl_spline
 		use mo_intrpl_linear
-      real*4 RATIO(KR1par), RRATN
+      real RATIO(KR1par), RRATN
       dimension grid1(KN1par)
  
       COMMON /US1/ US11(KMpar,KNpar) 
@@ -878,10 +878,10 @@
 
       INTEGER           :: key_spln
 
-      real*8, dimension(KN1par)    :: XXS1,YYS1
-      real*8                       :: XARG,YFIT
-      real*8, dimension(KN1par+4)  :: KS1,CS1
-      real(4) :: ang_f33, ang_f44
+      double precision, dimension(KN1par)    :: XXS1,YYS1
+      double precision                       :: XARG,YFIT
+      double precision, dimension(KN1par+4)  :: KS1,CS1
+      real :: ang_f33, ang_f44
 
       ang_f33 = 20.0
       ang_f44 = 20.0
@@ -2003,7 +2003,7 @@
 !	  use mod_os
 	  use mo_intrpl_spline
 		use mo_intrpl_linear
-      real*4 RATIO(KR1par), RRATN
+      real RATIO(KR1par), RRATN
       dimension grid1(KN1par)
 
       real USEA,US11,US12,US22,US33,US34,US44
@@ -2022,10 +2022,10 @@
 
       INTEGER           :: key_spln
 	  
-      real*8, dimension(KN1par)    :: XXS1,YYS1
-      real*8                       :: XARG,YFIT
-      real*8, dimension(KN1par+4)  :: KS1,CS1
-      real(4) :: ang_f33, ang_f44
+      double precision, dimension(KN1par)    :: XXS1,YYS1
+      double precision                      :: XARG,YFIT
+      double precision, dimension(KN1par+4)  :: KS1,CS1
+      real :: ang_f33, ang_f44
 
       ang_f33 = 20.0
       ang_f44 = 20.0

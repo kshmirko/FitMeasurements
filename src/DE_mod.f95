@@ -25,23 +25,23 @@ SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I
 ! -- calls ftns/subroutines: Obj_Ftn
 	INTEGER,                     INTENT(IN)     :: nop, I_prn
 	INTEGER,                     INTENT(IN)     :: NP
-	REAL(sp),                    INTENT(IN)     :: LB(:)
-	REAL(sp),                    INTENT(IN)     :: UB(:)
+	REAL(dp),                    INTENT(IN)     :: LB(:)
+	REAL(dp),                    INTENT(IN)     :: UB(:)
 	INTEGER,                     INTENT(IN)     :: T, PD
-	REAL(sp),                    INTENT(IN)     :: F_lo, F_hi, Cr
-	REAL(sp),                    INTENT(OUT)    :: BH_best(:)
-	REAL(sp),                    INTENT(OUT)    :: F_best
+	REAL(dp),                    INTENT(IN)     :: F_lo, F_hi, Cr
+	REAL(dp),                    INTENT(OUT)    :: BH_best(:)
+	REAL(dp),                    INTENT(OUT)    :: F_best
 
 	! Local variables:
 	INTEGER                                     :: nn, kk, kc, tt, ik
 	INTEGER                                     :: IND
 	INTEGER,  DIMENSION(1)                      :: f1_pos
 	INTEGER,  DIMENSION(3)                      :: spouse
-	REAL(sp), DIMENSION( nop, NP )              :: THETA
-	REAL(sp), DIMENSION( NP )                   :: F_theta
-	REAL(sp), DIMENSION( nop )                  :: range, Z0, theta_new, theta_prime
-	REAL(sp), DIMENSION(3)                      :: Z2
-	REAL(sp)                                    :: fval, f1, ftri, Z1, RNP, Fdither, &
+	REAL(dp), DIMENSION( nop, NP )              :: THETA
+	REAL(dp), DIMENSION( NP )                   :: F_theta
+	REAL(dp), DIMENSION( nop )                  :: range, Z0, theta_new, theta_prime
+	REAL(dp), DIMENSION(3)                      :: Z2
+	REAL(dp)                                    :: fval, f1, ftri, Z1, RNP, Fdither, &
 	                                                RNoP, f1_turn
 	
 !	external Obj_Ftn

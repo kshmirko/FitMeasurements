@@ -114,8 +114,8 @@
       integer          ::  NEL (0:6)
       character(len=2) ::  NELC(0:6)
 
-      real*4 rmin1,rmax1,rgrid1,rgrid2
-      real*4 RATIO(KR1par),RRATN
+      real rmin1,rmax1,rgrid1,rgrid2
+      real RATIO(KR1par),RRATN
       dimension grid1(KN1par) 
      &         ,ANGLE1(KM1par)
      &         ,ANGLE2(KM1par)
@@ -133,16 +133,16 @@
 
 !c      save NDP
       INTEGER                      :: key_spln, NNEL, KKEL
-      real*8, dimension(KM1par)    :: XXS2,YYS2
-      real*8                       :: XARG,YFIT
-      real*8, dimension(KM1par+4)  :: KS1,CS1
+      double precision, dimension(KM1par)    :: XXS2,YYS2
+      double precision                       :: XARG,YFIT
+      double precision, dimension(KM1par+4)  :: KS1,CS1
 !c ----- Timer ------
       !real*4, external :: etime,dtime
 
-      real*4 ::  tarray(2),T_RFM,T_CFM,T_CFM0
+      real ::  tarray(2),T_RFM,T_CFM,T_CFM0
       real   ::  UTEST, tiny = 1e-29
-      real(4) :: xx1, xx2
-      real(4) :: ang_f33, ang_f44
+      real :: xx1, xx2
+      real :: ang_f33, ang_f44
 
       ang_f33 = 20.0
       ang_f44 = 20.0
