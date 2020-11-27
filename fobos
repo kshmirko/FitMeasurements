@@ -2,7 +2,7 @@
 help      = This is the help message...
 colors    = True
 quiet     = False
-jobs      = 1
+jobs      = 2
 compiler  = gnu
 mpi       = False
 cflags    = -c -Ofast -fdefault-real-8

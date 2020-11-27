@@ -19,10 +19,12 @@ CONTAINS
 
 !!======================================================
 
-SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I_prn, Obj_Ftn )
+SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I_prn, Obj_Ftn, thres )
 ! Optimizes `functn' using a differential evolution optimization technique
 ! -- requires global vars: dp
 ! -- calls ftns/subroutines: Obj_Ftn
+	use mo_DLS, only : RRR, AR, SD, RN, RK
+	use mo_par_DLS, only : KN1par
 	INTEGER,                     INTENT(IN)     :: nop, I_prn
 	INTEGER,                     INTENT(IN)     :: NP
 	REAL(dp),                    INTENT(IN)     :: LB(:)
@@ -31,6 +33,7 @@ SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I
 	REAL(dp),                    INTENT(IN)     :: F_lo, F_hi, Cr
 	REAL(dp),                    INTENT(OUT)    :: BH_best(:)
 	REAL(dp),                    INTENT(OUT)    :: F_best
+	REAL(dp),										 INTENT(IN)			:: thres
 
 	! Local variables:
 	INTEGER                                     :: nn, kk, kc, tt, ik
@@ -43,7 +46,9 @@ SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I
 	REAL(dp), DIMENSION(3)                      :: Z2
 	REAL(dp)                                    :: fval, f1, ftri, Z1, RNP, Fdither, &
 	                                                RNoP, f1_turn
-	
+	real(dp), allocatable :: Sols(:, :)
+	REAL(dp)																		:: Rtmp(KN1par), SDtmp(KN1par), RNtmp, RKtmp
+	LOGICAL 																		:: bfirst
 !	external Obj_Ftn
 	 interface
  		subroutine Obj_Ftn(NP, X, func_val)
@@ -69,6 +74,9 @@ SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I
 !       theta_new       = "trial vector" or "offspring vector"
 !   NOTES:- this diff evol method can be classified as DE/rand/1/bin
 
+
+	allocate(Sols(nop+1, T))
+	Sols = 0.0
 	RNP     = REAL( NP, dp ) ! convert NP to real
 	RNoP    = REAL( nop, dp )
 	f1_turn = 0.0D0
@@ -162,10 +170,13 @@ SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I
 			BH_best(:)  = THETA(:, f1_pos(1))
 			F_best  = f1
 			! Print best function parameters at each generation
-			WRITE(*,'(I5, E13.3, $)') tt, F_best
-			WRITE(*,*) (BH_best(ik),ik=1,nop) 
+			
 		END IF
 		
+		Sols(1,  tt)  = F_best
+		Sols(2:, tt) = BH_best
+		!WRITE(*,'(I5, E13.3, $)') tt, F_best
+		!WRITE(*,*) (BH_best(ik),ik=1,nop) 
 		
 		
 		! = = = = GRID LOCK EXIT = = = =
@@ -198,8 +209,32 @@ SUBROUTINE Diff_Evol( nop, NP, LB, UB, T, F_lo, F_hi, Cr, PD, BH_best, F_best, I
 		END IF
 
 	END DO gen_do 
-!- - - - - - - - end generation loop  - - - - - - - - - - - - - - - - - - - - - - - - -
-
+!- - - - - - - - end generation loop  - - - - - - - - - - - - - - - - - 
+	tt = 0
+	bfirst = .true.
+	do nn=1, T
+		if (Sols(1, nn) .lt. thres) then
+			CALL Obj_Ftn(nop, Sols(2:,nn), fval)
+			if(bfirst .eqv. .true.) then
+				SDtmp(1:KN1par) = SD(1:KN1par)
+				RNtmp = Sols(nop, nn)
+				RKtmp = Sols(nop+1, nn)
+				bfirst = .false.
+			else
+				SDtmp(1:KN1par) = SDtmp(1:KN1par) + SD(1:KN1par)
+				RNtmp = RNtmp + Sols(nop, nn)
+				RKtmp = RKtmp + Sols(nop+1, nn)
+			end if
+			tt = tt+1
+		endif
+	end do
+	
+	SD = SDtmp / REAL(tt) 
+	AR = SD
+	RN = RNtmp / REAL(tt)
+	RK = RKtmp / REAL(tt)
+	print '("MEAN REF.IDX =", F7.2, "+", F7.5, "i")', RN, RK
+	deallocate(Sols)
 END SUBROUTINE Diff_Evol
 !======================================================
 

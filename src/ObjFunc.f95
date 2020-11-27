@@ -14,6 +14,7 @@ module ObjFuncMod
 	integer, parameter	:: DiscrKindMAXABS   = 1
 	integer, parameter	:: FunctLogNormal		 = 0
 	integer, parameter	:: FunctPowerLaw		 = 1
+	integer, parameter	:: FunctManualInput	 = 2
 	integer, parameter	:: LnParamsCount		 = 5
 	integer, parameter	:: PowParamsCount		 = 4
 	  
@@ -27,6 +28,7 @@ module ObjFuncMod
 	integer	:: AlphaInpParamsCount, DepolInpParamsCount, InputVectorsCount
 	integer :: WavelengthCount 
 	integer	:: InpParamsCount, SearchParamsCount, NGEN
+	
 contains
 	
 	! Специальная функция инициализации переменных модуля
@@ -72,20 +74,28 @@ contains
 			end if
 		END DO
 		
-		! Last two items in X are always RN and RK
-		RN = X(NP-1)
-		RK = X(NP)
+		
 		
 		if ( (func_type .eq. FunctLogNormal) .and. (NP .eq. LnParamsCount) ) then
 			call SIZEDIS2(-KN,1,X(1),X(2),X(3),RMIN,RMAX,RRR,AR,AC) 
+			! Last two items in X are always RN and RK
+			RN = X(NP-1)
+			RK = X(NP)
+			SD(1:KN) = AR(1:KN)
 		else if ( (func_type .eq. FunctPowerLaw) .and. (NP .eq. PowParamsCount) ) then
 			call powerlaw(KN,X(1),X(2),RMIN,RMAX,RRR,AR,AC, KNpar)
+			! Last two items in X are always RN and RK
+			RN = X(NP-1)
+			RK = X(NP)
+			SD(1:KN) = AR(1:KN)
+		else if ( func_type .eq. FunctManualInput ) then
+			print *, "USER FUNC"
 		else
 			print *, "WRONG PARAMETERS COUNT OF FITTING FUNCTION TYPE"
 			STOP
 		endif		
 		
-		SD(1:KN) = AR(1:KN)
+		
 		
 		
 		DO I=1, WavelengthCount

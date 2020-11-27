@@ -5,9 +5,18 @@ program FitMeasurements
 ! 	use f90getopt
 	
 	implicit None
-	integer  I, nop, NP, T, II
+	integer  I, nop, NP, T, II, arg_count, ftype
 	real v, Cr, Fl, Fh
 	character(len=255) fname, data_fname, iniFname
+	
+	arg_count = command_argument_count()
+	
+	if ( arg_count .ne. 1 ) then
+		write (*, *) "./FitMeasurements iniFilename.ini"
+		STOP
+	endif
+	
+	
 !   type(option_s)	::	opts(2)
 !
 ! 	opts(1) = option_s( "func_type", .true., 'f' )
@@ -34,6 +43,8 @@ program FitMeasurements
 			
 	fname = "./input.dat"
 	iniFname = "./inifile.ini"
+	
+	call get_command_argument(arg_count, iniFname)
 	
 	call InitObjFuncVariables()
 	
@@ -64,7 +75,7 @@ program FitMeasurements
 	! Number of generations
 	T = NGEN
 	! Crossover variable: Cr \in [0,1]
-	Cr = 0.5D0 ! manually set
+	Cr = 0.85D0 ! manually set
 
 	! Scale factor determined by dither:
 	Fl = SQRT(1.0D0 - 0.50D0* Cr )
@@ -72,16 +83,31 @@ program FitMeasurements
 	
 	!call powerlaw(KN,1,1.0,-4.3,0.1,1.0,RRR,AR,AC,KNpar)
 	
+	
+	
 	DO II=1, InputVectorsCount
+		
 		Ym(1:InpParamsCount) = datum(1:InpParamsCount, II)
 		
 		
-		CALL Diff_Evol( SearchParamsCount, NP, LoParamVal, UpParamVal, T, Fl, Fh, Cr, 1, X, v, 100, ObjectiveFunction )
+		CALL Diff_Evol( SearchParamsCount, NP, LoParamVal, UpParamVal, T, Fl, Fh, Cr, 1, X, v, 100, ObjectiveFunction, 15.0 )
+		ftype = func_type
+		func_type = FunctManualInput
   	CALL ObjectiveFunction(SearchParamsCount, X, v)
-		
+		func_type = ftype
+		Call PrintReport1(v)
+! 		PRINT '("ERROR = ", F13.3)', v
+! 		PRINT *, "VOLUME SIZE DISTRIBUTION"
+! 		PRINT '(A13,A13)', "R, mkm", "SD"
+!
+! 		DO I=1, KN
+! 			PRINT '(2E13.3)', RRR(I), SD(I)
+! 		END DO
+		CALL ObjectiveFunction(SearchParamsCount, X, v)
 		Call PrintReport(v, X)
 	END DO
-		
+	
+	
 	
 	
 	
@@ -141,13 +167,13 @@ contains
 		PRINT '("=======")'
 		PRINT *
 		PRINT *, "The program found a solution to the inverse scattering problem in the spheroid"
-		PRINT *, "approximation, using a log-normal function as the distribution. The search for"
-		PRINT *, "a solution consisted in the selection of the parameters of this distribution "
+		PRINT *, "approximation, using a log-normal function as the distribution'sshape. The search"
+		PRINT *, "for a solution consisted in the selection of the parameters of this distribution "
 		PRINT *, "that minimize residual function."
 		PRINT *
 		PRINT *, "The original solution vector contains five components: 3 backscatter coefficients"
-		PRINT *, "at wavelengths (0.355, 0.532, and 1.064 μm) and 2 attenuation coefficients "
-		PRINT *, "at wavelengths (0.355 and 0.532 μm)."
+		PRINT *, "at wavelengths (0.355, 0.532, and 1.064 mkm) and 2 attenuation coefficients "
+		PRINT *, "at wavelengths (0.355 and 0.532 mkm)."
 		PRINT *
 	
 	
@@ -177,7 +203,7 @@ contains
 			PRINT '(F13.3,2E13.3,2F13.3)', Wvl(I), Ext(I), Bsc(I), Blr(I), Ldr(I)
 		END DO
 		PRINT *
-		PRINT *, "SIZE DISTRIBUTION"
+		PRINT *, "VOLUME SIZE DISTRIBUTION"
 		PRINT '(A13,A13)', "R, mkm", "SD"
 		
 		DO I=1, KN
@@ -185,4 +211,57 @@ contains
 		END DO
 		
 	end subroutine PrintReport
+	
+	subroutine PrintReport1(gof)
+		use mo_DLS
+		use ObjFuncMod
+		implicit none
+		
+		
+		real, intent(in) :: gof
+		
+		! REPORT RESULTS
+		PRINT *
+		PRINT '("REPORT:")'
+		PRINT '("=======")'
+		PRINT *
+		PRINT *, "The program found a solution to the inverse scattering problem in the spheroid"
+		PRINT *, "approximation, using a log-normal function as the distribution'sshape. The search"
+		PRINT *, "for a solution consisted in the selection of the parameters of this distribution "
+		PRINT *, "that minimize residual function."
+		PRINT *
+		PRINT *, "The original solution vector contains five components: 3 backscatter coefficients"
+		PRINT *, "at wavelengths (0.355, 0.532, and 1.064 mkm) and 2 attenuation coefficients "
+		PRINT *, "at wavelengths (0.355 and 0.532 mkm)."
+		PRINT *
+	
+	
+	
+	
+		PRINT '("GOODNESS OF FIT:", F13.2, "%",/)', gof
+	
+		PRINT *, "MEASURED AND CALCULATED DATA"
+		PRINT *, "============================"
+		PRINT *
+		PRINT '(A3,3A13," %")', "#", "Y meas", "Y calc", "Error,"
+	
+		DO I=1, InpParamsCount
+			PRINT '(I3, 2E13.3, F13.2, " %")', I, Ym(I), Yc(I), ((Ym(I)-Yc(I))/Ym(I))*100
+		END DO
+	
+		PRINT *
+		PRINT *, "OPTICAL PROPERTIES (CALC)"
+		PRINT '(5A13)', "WVL", "Ext", "Bsc", "BLR", "LDR"
+		DO I=1, WavelengthCount 
+			PRINT '(F13.3,2E13.3,2F13.3)', Wvl(I), Ext(I), Bsc(I), Blr(I), Ldr(I)
+		END DO
+		PRINT *
+		PRINT *, "VOLUME SIZE DISTRIBUTION"
+		PRINT '(A13,A13)', "R, mkm", "SD"
+		
+		DO I=1, KN
+			PRINT '(2E13.3)', RRR(I), AR(I)
+		END DO
+		
+	end subroutine PrintReport1
 end program FitMeasurements
