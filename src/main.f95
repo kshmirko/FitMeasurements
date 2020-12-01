@@ -264,4 +264,10 @@ contains
 		END DO
 		
 	end subroutine PrintReport1
+	
+	subroutine PlotSizeDistribution(fname)
+		implicit none
+		character(len=*), intent(in)	::	fname
+		
+	end subroutine PlotSizeDistribution
 end program FitMeasurements
