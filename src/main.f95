@@ -5,7 +5,7 @@ program FitMeasurements
 ! 	use f90getopt
 	
 	implicit None
-	integer  I, nop, NP, T, II, arg_count, ftype
+	integer  I, nop, NP, T, II, arg_count, ftype, JJ
 	real v, Cr, Fl, Fh
 	character(len=255) fname, data_fname, iniFname
 	
@@ -87,10 +87,15 @@ program FitMeasurements
 	
 	DO II=1, InputVectorsCount
 		
-		Ym(1:InpParamsCount) = datum(1:InpParamsCount, II)
+		! Готовим вектор значений и абсолютной ошибки для вычислений
+		DO JJ = 1, InpParamsCount
+			Ym(JJ) = datum(JJ, II)
+			Yerr(JJ) = daterr(JJ, II) * Ym(JJ) / 100.0
+		END DO
 		
 		
-		CALL Diff_Evol( SearchParamsCount, NP, LoParamVal, UpParamVal, T, Fl, Fh, Cr, 1, X, v, 100, ObjectiveFunction, 15.0 )
+		CALL Diff_Evol( SearchParamsCount, NP, LoParamVal, UpParamVal, T, &
+										&Fl, Fh, Cr, 1, X, v, 100, ObjectiveFunction, 30.0 )
 		ftype = func_type
 		func_type = FunctManualInput
   	CALL ObjectiveFunction(SearchParamsCount, X, v)
@@ -147,6 +152,7 @@ contains
 		READ(101, *) InputVectorsCount
 		DO I=1, InputVectorsCount
 			READ(101, *) (datum(J, I),J=1,InpParamsCount)
+			READ(101, *) (daterr(J, I),J=1,InpParamsCount)
 		END DO
 		close(101)
 		

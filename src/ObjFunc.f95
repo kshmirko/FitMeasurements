@@ -1,6 +1,14 @@
 module ObjFuncMod
-	! при работе с модулями в фортране важно спечиально инициализировать все 
-	! его переменные, особенно в случае масивов
+	! при работе с модулями в фортране важно спечиально инициализировать
+	! все его переменные, особенно в случае масивов
+	! Основные используемые переменные:
+	! Ym(MaxInpParamsCount)		- вектор измерений
+	! Yc(MaxInpParamsCount)		- вектор расчетных величин
+	! Yerr(MaxInpParamsCount)	-	вектор ошибок измерений в процентах
+	! 													в дальнейшем, он преобразуется в вектор
+	!														абсолютных ошибок Yerr = Yerr * Ym
+	!	Добавил вариант DiscrKindChiSqr - невязка считается как хи-квадрат
+	
 	implicit none
 	public
 	integer, parameter	:: MaxInputVectorsCount = 100
@@ -12,17 +20,23 @@ module ObjFuncMod
 	
 	integer, parameter	:: DiscrKindRMS			 = 0
 	integer, parameter	:: DiscrKindMAXABS   = 1
+	integer, parameter	:: DiscrKindChiSqr	 = 2
+	
 	integer, parameter	:: FunctLogNormal		 = 0
 	integer, parameter	:: FunctPowerLaw		 = 1
 	integer, parameter	:: FunctManualInput	 = 2
+	
 	integer, parameter	:: LnParamsCount		 = 5
 	integer, parameter	:: PowParamsCount		 = 4
 	  
 	
-	real, dimension(MaxInpParamsCount, MaxInputVectorsCount)	:: datum
-	real, dimension(MaxInpParamsCount)		:: Ym,	 Yc
+	real, dimension(MaxInpParamsCount, MaxInputVectorsCount)	:: datum, &
+																															 &daterr
+	real, dimension(MaxInpParamsCount)		:: Ym,	Yc, Yerr
+	
 	real, dimension(MaxSearchParamsCount)	:: LoParamVal, UpParamVal, X
 	real, dimension(MaxWavelengthsCount)		:: Bsc, Ext, Wvl, Absb, Ldr, Blr
+	
 	real	::	Rmin, Rmax
 	Integer:: discrKind, func_type
 	integer	:: AlphaInpParamsCount, DepolInpParamsCount, InputVectorsCount
@@ -35,8 +49,10 @@ contains
 	subroutine InitObjFuncVariables()
 		NGEN = 1000
 		datum = 0.0
+		daterr = 0.0
 		Ym = 0.0
 		Yc = 0.0
+		Yerr = 0.0
 		LoParamVal = 0.0
 		UpParamVal = 0.0
 		Bsc = 0.0
@@ -128,7 +144,7 @@ contains
 		END DO
 		
 		! В зависимости от того, какой свособ расчета невязки выбран
-		! роизводим ычисления
+		! производим вычисления
 		if(discrKind==DiscrKindRMS) then
 			!случай невязки в виде root mean square 
 			func_val = 0.0
@@ -140,7 +156,8 @@ contains
 			END DO
 			
 			func_val = SQRT(func_val/SearchParamsCount)
-			
+			! переводим в проценты полученную величину
+			func_val = func_val * 100
 		else if (discrKind==DiscrKindMAXABS) then
 			! случай максимального абсолютного отклонения
 			func_val=0.0
@@ -153,11 +170,19 @@ contains
  					func_val = tmp
  				end if
  			END DO
+			! переводим в проценты полученную величину
+			func_val = func_val * 100
+		else if (discrKind==DiscrKindChiSqr) then
+			! случай максимального абсолютного отклонения
+			func_val=0.0
 		
+ 			DO I=1, SearchParamsCount
+ 				tmp = (( Ym(I)-Yc(I) )/Yerr(I))**2.0
+ 				func_val = func_val + tmp
+ 			END DO
 		endif
 		
-		! переводим в проценты полученную величину
-		func_val = func_val * 100
+		
 	end subroutine ObjectiveFunction
 	
 	subroutine powerlaw(KN,A,GAMMA,RMIN,RMAX,RRR,AR,AC,KNPar)
