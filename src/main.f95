@@ -89,31 +89,21 @@ program FitMeasurements
 		
 		! Готовим вектор значений и абсолютной ошибки для вычислений
 		DO JJ = 1, InpParamsCount
-			Ym(JJ) = datum(JJ, II)
+			Ym(JJ) = datum(JJ, II)*1e-9
 			Yerr(JJ) = daterr(JJ, II) * Ym(JJ) / 100.0
 		END DO
 		
 		
 		CALL Diff_Evol( SearchParamsCount, NP, LoParamVal, UpParamVal, T, &
-										&Fl, Fh, Cr, 1, X, v, 100, ObjectiveFunction, 30.0 )
+										&Fl, Fh, Cr, 1, X, v, 100, ObjectiveFunction, threshold )
 		ftype = func_type
 		func_type = FunctManualInput
   	CALL ObjectiveFunction(SearchParamsCount, X, v)
 		func_type = ftype
 		Call PrintReport1(v)
-! 		PRINT '("ERROR = ", F13.3)', v
-! 		PRINT *, "VOLUME SIZE DISTRIBUTION"
-! 		PRINT '(A13,A13)', "R, mkm", "SD"
-!
-! 		DO I=1, KN
-! 			PRINT '(2E13.3)', RRR(I), SD(I)
-! 		END DO
 		CALL ObjectiveFunction(SearchParamsCount, X, v)
 		Call PrintReport(v, X)
 	END DO
-	
-	
-	
 	
 	
 	
@@ -138,6 +128,7 @@ contains
 		READ(101, *) func_type
 		READ(101, *) KN
 		READ(101, *) Rmin, Rmax
+		READ(101, *) threshold
 		READ(101, *) NGEN
 		
 		if(func_type .eq. FunctLogNormal) then
@@ -162,10 +153,12 @@ contains
 	subroutine PrintReport(gof, fit)
 		use mo_DLS
 		use ObjFuncMod
+		use mo_par_DLS, only : KN1par
 		implicit none
 		
 		
 		real, intent(in) :: gof, fit(:)
+		real						 :: tmpr(KN1par), a, b, reff, dlogr, Ntot
 		
 		! REPORT RESULTS
 		PRINT *
@@ -187,9 +180,9 @@ contains
 	
 		PRINT '("GOODNESS OF FIT:", F13.2, "%",/)', gof
 	
-		PRINT '("                 ", 5A13)', "CM", "SM", "RMM", "RN", "RK"
+		PRINT '("                 ", 5A13)', "C1", "C2", "C3", "C4", "C5"
 		PRINT '("                 ", 5A13)', "==========", "==========", "==========", "==========", "=========="
-		PRINT '("Final solution = ", 5F13.6)', fit(1:SearchParamsCount)
+		PRINT '("Final solution = ", 5E13.6)', fit(1:SearchParamsCount)
 		PRINT *, "                   ----------   ----------   ----------   ----------   ----------"
 		PRINT *
 	
@@ -212,19 +205,47 @@ contains
 		PRINT *, "VOLUME SIZE DISTRIBUTION"
 		PRINT '(A13,A13)', "R, mkm", "SD"
 		
+		A = 0.0
+		Ntot = 0.0
 		DO I=1, KN
 			PRINT '(2E13.3)', RRR(I), AR(I)
+			tmpr(I) = AR(I) / (4.1888 * RRR(I)**3)
+			Ntot = Ntot + tmpr(I) * RRR(I)
 		END DO
 		
+		dlogr = LOG(RRR(2)/RRR(1))
+		Ntot = Ntot * dlogr
+		print '("Ntot = ", F10.4, " cm-3")', Ntot*1e12
+		! Вычислим эффективный радиус частиц, для этого возьмем и переведем
+		! нашу концентрацию в 
+		
+		reff = 0.0
+		a= 0.0
+		b= 0.0
+		
+		do I=1, KN
+			a = a + (RRR(I)**4 * tmpr(I))
+			b = b + (RRR(I)**3 * tmpr(I))
+		end do
+		reff = a / b
+		!A = X(1)*0.238732414637843/(EXP(3*X(3)+4.5*X(2)**2))
+		A = Yc(2)/(Ntot*reff**2)
+		
+		
+		print '("REFF = ", F7.3)', reff
+		print '("A    = ", F7.3, " LG(A) = ", F7.3)', A, LOG10(A)
 	end subroutine PrintReport
 	
 	subroutine PrintReport1(gof)
 		use mo_DLS
+		use mo_par_DLS, only : KN1par
 		use ObjFuncMod
 		implicit none
 		
 		
 		real, intent(in) :: gof
+		real						 :: dlogr, reff, a, b
+		real						 :: tmpr(KN1par)
 		
 		! REPORT RESULTS
 		PRINT *
@@ -267,8 +288,26 @@ contains
 		
 		DO I=1, KN
 			PRINT '(2E13.3)', RRR(I), AR(I)
+			tmpr(I) = AR(I) / (4.1888 * RRR(I)**3)
 		END DO
 		
+		! Вычислим эффективный радиус частиц, для этого возьмем и переведем
+		! нашу концентрацию в 
+		dlogr = LOG(RRR(2)/RRR(1))
+		reff = 0.0
+		a= 0.0
+		b= 0.0
+		
+		do I=1, KN
+			a = a + (RRR(I)**4 * tmpr(I))
+			b = b + (RRR(I)**3 * tmpr(I))
+		end do
+		reff = a / b
+		A = Yc(2)/(X(1)*reff**2)
+		
+		
+		print '("REFF = ", F7.3)', reff
+		print '("A    = ", F7.3, " LG(A) = ", F7.3)', A, LOG10(A)
 	end subroutine PrintReport1
 	
 	subroutine PlotSizeDistribution(fname)

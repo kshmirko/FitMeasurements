@@ -26,62 +26,14 @@
  11.4323        7.772107143E-3
  15.0           2.106020227E-3
 ./KERNELS_n22k16_181_base
-./KERNELS_fix
+./KERNELS_fix_sph
 ./KERNELS_new
-25                  ! KR    from Oleg's paper (sum=1.)            
-0.3349  0.066185    
-0.3669  0.065025
-0.4019  0.063635
-0.4403  0.06205  
-0.4823  0.05872
-0.5283  0.05335
-0.5787  0.0477625
-0.6339  0.042953
-0.6944  0.0403205
-0.7607  0.
-0.8333  0.
-0.9129  0.
-1.      0.
-1.0954  0.
-1.2     0.
-1.3145  0.
-1.44    0.0403205
-1.5774  0.042953
-1.728   0.0477625
-1.8929  0.05335
-2.0736  0.05872
-2.2715  0.06205
-2.48832 0.063635
-2.7258  0.065025
-2.9860  0.066185
+1                  ! KR    from Oleg's paper (sum=1.)            
+1.      1.
 1                         ! KM
 180.
-25                            ! NRATN
-Rkernel1_033
-Rkernel1_037
-Rkernel1_040
-Rkernel1_044
-Rkernel1_048
-Rkernel1_053
-Rkernel1_058
-Rkernel1_063
-Rkernel1_069
-Rkernel1_076
-Rkernel1_083
-Rkernel1_091
+1                            ! NRATN
 Rkernel1_100
-Rkernel1_110
-Rkernel1_120
-Rkernel1_131
-Rkernel1_144
-Rkernel1_158
-Rkernel1_173
-Rkernel1_189
-Rkernel1_207
-Rkernel1_227
-Rkernel1_249
-Rkernel1_273
-Rkernel1_299
 
 
 *****************

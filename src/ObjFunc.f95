@@ -37,7 +37,7 @@ module ObjFuncMod
 	real, dimension(MaxSearchParamsCount)	:: LoParamVal, UpParamVal, X
 	real, dimension(MaxWavelengthsCount)		:: Bsc, Ext, Wvl, Absb, Ldr, Blr
 	
-	real	::	Rmin, Rmax
+	real	::	Rmin, Rmax, threshold
 	Integer:: discrKind, func_type
 	integer	:: AlphaInpParamsCount, DepolInpParamsCount, InputVectorsCount
 	integer :: WavelengthCount 
