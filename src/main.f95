@@ -1,56 +1,43 @@
+!
+!  main.f95
+!  FortranFindSolution
+!
+!  Created by Константин Шмирко on 2020-12-30.
+!  Copyright 2020 Константин Шмирко. All rights reserved.
+!
 program FitMeasurements
 	use mo_DLS
 	use ObjFuncMod
-	USE DE_mod
-! 	use f90getopt
 	
 	implicit None
-	integer  I, nop, NP, T, II, arg_count, ftype, JJ
+	integer  I, nop, NP, T, II, arg_count, ftype, JJ, ires
+	integer*8 opt
 	real v, Cr, Fl, Fh
 	character(len=255) fname, data_fname, iniFname
+	external ObjectiveFunction, fmin
+	include 'nlopt.inc'
 	
+	
+	! Проверяем наличие аргументов командной строки
 	arg_count = command_argument_count()
-	
 	if ( arg_count .ne. 1 ) then
 		write (*, *) "./FitMeasurements iniFilename.ini"
 		STOP
 	endif
 	
-	
-!   type(option_s)	::	opts(2)
-!
-! 	opts(1) = option_s( "func_type", .true., 'f' )
-! 	opts(2) = option_s( "help", .false., 'h')
-!
-! 	if (command_argument_count() .eq. 0 ) then
-! 		write (*,*) "Available Options: --func_type=0|1 -f0|1 --help -h"
-! 		STOP
-! 	end if
-!
-!
-! 	do
-! 		select case( getopt( "f:h", opts ) ) ! opts is optional (for longopts only)
-! 	  	case( char(0) )
-! 	    	exit
-! 	    case( 'f' )
-! 				print *, 'func_type/f=', optarg
-! 				STOP
-! 	    case( 'h' )
-! 				print *, 'help-screen'
-! 				STOP
-! 	  end select
-! 	end do
 			
-	fname = "./input.dat"
+	fname    = "./input.dat"
 	iniFname = "./inifile.ini"
 	
+	! Get first command line argument - init file name
 	call get_command_argument(arg_count, iniFname)
 	
+	! Initialize all module variables for solving inversion poblem
 	call InitObjFuncVariables()
 	
-	
-	! Call init variables from file
+	! Initialize all shared variables from the ini file
 	call ReadIniFile(iniFname, fname)
+	
 	call DLS_read_input(fname)
 	
 	! NDP = 0, then berfore calculations we load tables from file
@@ -59,16 +46,6 @@ program FitMeasurements
 	! Allocate internal arrays last parameter = 1
 	call alloc_DLS_array(key,keyEL,1)
 	
-	!Wvl = [0.355, 0.532, 1.064]
-	!Ym = [0.037000,0.042000,0.029000,1.414000,1.218000]
-	!LoParamVal = (/0.01, 0.15, 0.05, 1.3, 0.00000001/)
-	!UpParamVal = (/10.0, 0.48, 1.2 , 1.56, 0.05/)
-	!X =  (/5.0, 0.45, 0.8, 1.45, 0.01/)
-
-	!KN=22
-	!RMin = 0.05
-	!RMax = 15.0
-	!discrKind = DiscrKindRMS
 	
 	! Number of population vectors:
 	NP = 10 * SearchParamsCount + 10
@@ -84,8 +61,28 @@ program FitMeasurements
 	!call powerlaw(KN,1,1.0,-4.3,0.1,1.0,RRR,AR,AC,KNpar)
 	
 	
+	X = 0.5*(LoParamVal+UpParamVal)
 	
-	DO II=1, InputVectorsCount
+	
+	
+	
+	DO II=1, InputVectorsCount	
+		! Инициализация солвера с методом глобальной оптимизации
+		if (func_type .eq. FunctLogNormal) then
+			call nlo_create(opt, NLOPT_GN_ISRES, LnParamsCount)
+		else if (func_type .eq. FunctPowerLaw) then
+			call nlo_create(opt, NLOPT_GN_ISRES, PowParamsCount)
+		else
+			stop 'Неподдерживаемый тип аппроксимирующей функции'
+		endif
+
+		call nlo_set_lower_bounds(ires, opt, LoParamVal)
+		call nlo_set_upper_bounds(ires, opt, UpParamVal)
+		call nlo_set_min_objective(ires, opt, fmin, 0)
+		call nlo_set_xtol_rel(ires, opt, 1.0e-5)
+		call nlo_set_ftol_rel(ires, opt, 1.0e-5)
+		call nlo_set_maxeval(ires, opt, 100000)
+		
 		
 		! Готовим вектор значений и абсолютной ошибки для вычислений
 		DO JJ = 1, InpParamsCount
@@ -93,17 +90,20 @@ program FitMeasurements
 			Yerr(JJ) = daterr(JJ, II) * Ym(JJ) / 100.0
 		END DO
 		
+		call nlo_optimize(ires, opt, X, v) 
 		
-		CALL Diff_Evol( SearchParamsCount, NP, LoParamVal, UpParamVal, T, &
-										&Fl, Fh, Cr, 1, X, v, 100, ObjectiveFunction, threshold )
-		ftype = func_type
-		func_type = FunctManualInput
-  	CALL ObjectiveFunction(SearchParamsCount, X, v)
-		func_type = ftype
-		Call PrintReport1(v)
-		CALL ObjectiveFunction(SearchParamsCount, X, v)
-		Call PrintReport(v, X)
+		if (func_type .eq. FunctLogNormal) then
+			print '(I4, "   RETCODE: ", I4, " SOLUTION: ", E13.3, 2F7.3, F7.2, F7.4, " FIT: ", F5.1, $)', II, ires, X(1:5), v
+		elseif (func_type .eq. FunctPowerLaw) then
+			print '(I4, "   RETCODE: ", I4, " SOLUTION: ", E13.3, 2F7.2, F7.4, " FIT: ", F5.1, $)', II, ires, X(1:4), v		
+		endif
+		
+		call nlo_destroy(opt)
+		Call PrintReport3(v, X)
+		
+		
 	END DO
+	
 	
 	
 	
@@ -315,4 +315,45 @@ contains
 		character(len=*), intent(in)	::	fname
 		
 	end subroutine PlotSizeDistribution
+	
+	subroutine PrintReport3(gof, fit)
+		use mo_DLS
+		use ObjFuncMod
+		use mo_par_DLS, only : KN1par
+		implicit none
+		
+		
+		real, intent(in) :: gof, fit(:)
+		real						 :: tmpr(KN1par), a, b, reff, dlogr, Ntot
+		
+		! REPORT RESULTS
+		A = 0.0
+		Ntot = 0.0
+		DO I=1, KN
+			tmpr(I) = AR(I) / (4.1888 * RRR(I)**3)
+			Ntot = Ntot + tmpr(I) * RRR(I)
+		END DO
+		
+		dlogr = LOG(RRR(2)/RRR(1))
+		Ntot = Ntot * dlogr
+		print '(" Ntot = ", F8.2, " cm-3 ", $)', Ntot*1e12
+		! Вычислим эффективный радиус частиц, для этого возьмем и переведем
+		! нашу концентрацию в 
+		
+		reff = 0.0
+		a= 0.0
+		b= 0.0
+		
+		do I=1, KN
+			a = a + (RRR(I)**4 * tmpr(I))
+			b = b + (RRR(I)**3 * tmpr(I))
+		end do
+		reff = a / b
+		!A = X(1)*0.238732414637843/(EXP(3*X(3)+4.5*X(2)**2))
+		A = Yc(2)/(Ntot*reff**2)
+		
+		
+		print '("REFF = ", F5.2, $)', reff
+		print '(" A    = ", F5.3, " LG(A) = ", F6.3)', A, LOG10(A)
+	end subroutine PrintReport3
 end program FitMeasurements

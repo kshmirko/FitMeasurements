@@ -7,20 +7,20 @@ MODULE mo_DLS
 	real		::	WL, RN, RK, pomin, pomax, xext, xabs, xsca, albedo
 	real*4, dimension (KRpar)	::	R
 
-	real, dimension(KNpar) :: grid,SD
+	real, dimension	(KNpar) :: grid,SD
 	real, dimension (KRpar) :: RD
 	real, dimension (KMpar) :: f11, f12, f22, f33, f34, f44
 	real, dimension (KMpar) :: ANGLE
 	real	::	XBLR,XLDR
 
-	character (len=255)                    ::  distname_O,distname_F,distname_N   
-	character (len=255), dimension(KR1par) ::  comm_name   
-	integer		::	key_SD, ID, NMD, NSD
+	character (len=255)                    ::	distname_O, distname_F, distname_N   
+	character (len=255), dimension(KR1par) ::	comm_name   
+	integer																 ::	key_SD, ID, NMD, NSD
 	! number of aerosol component, need development for KSD>1
   integer,parameter :: KSD=1 
 	real, dimension(KMD)   :: CM, SM, RMM     
   real, dimension(KNpar) :: RRR, AR, xgrid
-  real					       :: AC
+  real									 :: AC
 END MODULE mo_DLS
 
       

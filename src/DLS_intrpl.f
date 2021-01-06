@@ -152,15 +152,15 @@
       CALL MATRIX_FIX(KN1,grid1,WAVEL,KRE,KIM,ARE,AIM
      &               ,RATIO,NDP)
 
-								if(keySUB.eq.0) then
+	  if(keySUB.eq.0) then
 								  !T_INT01=dtime(tarray)
 								  !T_INT1=T_INT1+T_INT01   !+++ 
-								  CALL CPU_TIME (time_end1)
-								  T_CPU1=T_CPU1+(time_end1-time_begin1)   !+++ 	  
+        CALL CPU_TIME (time_end1)
+		T_CPU1=T_CPU1+(time_end1-time_begin1)   !+++ 	  
 !                                  WRITE(*,51) T_INT1/60.     
 								  !WRITE(*,51) T_INT1
 								  !WRITE(*,52) T_CPU1
-								endif
+	  endif
    51 format('  Read kernels .................... ',f8.3,' sec')
    52 format('  Read kernels CPU_time ........... ',f8.3,' sec')
 
